@@ -4,6 +4,7 @@ node_modules
 dist
 /heroku-setup
 /yarn-error.log
+/@app/server/tls/*.pem
 /@app/e2e/cypress/videos
 /@app/e2e/cypress/screenshots
 /@app/graphql/index.*

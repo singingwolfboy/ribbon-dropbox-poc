@@ -1,16 +1,37 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 import chalk from "chalk";
-import { createServer } from "http";
+import fs from "fs/promises";
+import { createServer as createHttpServer } from "http";
+import { createServer as createHttpsServer } from "https";
 
 import { getShutdownActions, makeApp } from "./app";
 
 // @ts-ignore
 const packageJson = require("../../../package.json");
 
+async function hasTLSCerts(hostname = "localhost") {
+  try {
+    await Promise.all([
+      fs.access(`tls/${hostname}.pem`),
+      fs.access(`tls/${hostname}-key.pem`),
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function main() {
-  // Create our HTTP server
-  const httpServer = createServer();
+  // Create our HTTP(S) server
+  const hasCerts = await hasTLSCerts("localhost");
+  const httpServer = hasCerts
+    ? createHttpsServer({
+        cert: await fs.readFile("tls/localhost.pem"),
+        key: await fs.readFile("tls/localhost-key.pem"),
+      })
+    : createHttpServer();
+  const protocol = hasCerts ? "https" : "http";
 
   // Make our application (loading all the middleware, etc)
   const app = await makeApp({ httpServer });
@@ -38,11 +59,13 @@ async function main() {
     );
     console.log();
     console.log(
-      `  Site:     ${chalk.bold.underline(`http://localhost:${actualPort}`)}`
+      `  Site:     ${chalk.bold.underline(
+        `${protocol}://localhost:${actualPort}`
+      )}`
     );
     console.log(
       `  GraphiQL: ${chalk.bold.underline(
-        `http://localhost:${actualPort}/graphiql`
+        `${protocol}://localhost:${actualPort}/graphiql`
       )}`
     );
     console.log();
