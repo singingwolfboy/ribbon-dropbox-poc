@@ -30,6 +30,7 @@
     "connect-pg-simple": "^6.1.0",
     "connect-redis": "^5.2.0",
     "csurf": "^1.11.0",
+    "dropbox": "^9.8.6",
     "express": "^4.17.1",
     "express-session": "^1.17.2",
     "graphile-build": "^4.12.0",

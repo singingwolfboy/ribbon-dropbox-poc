@@ -308,6 +308,21 @@ type LogoutPayload {
   success: Boolean
 }
 
+"""whatever"""
+type MakeDropboxFilePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+  success: Boolean
+}
+
 """All input for the `makeEmailPrimary` mutation."""
 input MakeEmailPrimaryInput {
   """
@@ -452,6 +467,9 @@ type Mutation {
   Use this mutation to logout from your account. Don't forget to clear the client state!
   """
   logout: LogoutPayload
+
+  """Just for testing: make a file on Dropbox"""
+  makeDropboxFile: MakeDropboxFilePayload
 
   """
   Your primary email is where we'll notify of account events; other emails may be used for discovery or login. Use this when you're changing your email address.
