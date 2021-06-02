@@ -1,7 +1,7 @@
 import { Express } from "express";
 import { get } from "lodash";
 import passport from "passport";
-import { Strategy as GitHubStrategy } from "passport-github2";
+import { Strategy as DropboxStrategy } from "passport-dropbox-oauth2";
 
 import { getWebsocketMiddlewares } from "../app";
 import installPassportStrategy from "./installPassportStrategy";
@@ -40,24 +40,33 @@ export default async (app: Express) => {
     res.redirect("/");
   });
 
-  if (process.env.GITHUB_KEY) {
+  if (process.env.DROPBOX_KEY) {
     await installPassportStrategy(
       app,
-      "github",
-      GitHubStrategy,
+      "dropbox-oauth2",
+      DropboxStrategy,
       {
-        clientID: process.env.GITHUB_KEY,
-        clientSecret: process.env.GITHUB_SECRET,
-        scope: ["user:email"],
+        apiVersion: "2",
+        clientID: process.env.DROPBOX_KEY,
+        clientSecret: process.env.DROPBOX_SECRET,
+        scope: [
+          "account_info.read",
+          "files.content.write",
+          "files.content.read",
+          "file_requests.write",
+        ].join(" "),
       },
       {},
-      async (profile, _accessToken, _refreshToken, _extra, _req) => ({
-        id: profile.id,
-        displayName: profile.displayName || "",
-        username: profile.username,
-        avatarUrl: get(profile, "photos.0.value"),
-        email: profile.email || get(profile, "emails.0.value"),
-      }),
+      async (profile, _accessToken, _refreshToken, _extra, _req) => {
+        const email = get(profile, "emails[0].value");
+        return {
+          id: profile.id,
+          displayName: profile.displayName || "",
+          username: email.split("@")[0],
+          avatarUrl: get(profile, "_json.profile_photo_url"),
+          email: email,
+        };
+      },
       ["token", "tokenSecret"]
     );
   }

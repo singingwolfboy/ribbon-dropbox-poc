@@ -1,4 +1,5 @@
 import { Express, Request, RequestHandler } from "express";
+import { get } from "lodash";
 import passport from "passport";
 
 import { getRootPgPool } from "./installDatabasePools";
@@ -62,6 +63,10 @@ const setReturnTo: RequestHandler = (req, _res, next) => {
   next();
 };
 
+const SERVICE_URL_MAP = {
+  "dropbox-oauth2": "dropbox",
+};
+
 export default (
   app: Express,
   service: string,
@@ -76,12 +81,13 @@ export default (
   } = {}
 ) => {
   const rootPgPool = getRootPgPool(app);
+  const serviceUrl = get(SERVICE_URL_MAP, service, service);
 
   passport.use(
     new Strategy(
       {
         ...strategyConfig,
-        callbackURL: `${process.env.ROOT_URL}/auth/${service}/callback`,
+        callbackURL: `${process.env.ROOT_URL}/auth/${serviceUrl}/callback`,
         passReqToCallback: true,
       },
       async (
@@ -162,7 +168,7 @@ export default (
     )
   );
 
-  app.get(`/auth/${service}`, setReturnTo, async (req, res, next) => {
+  app.get(`/auth/${serviceUrl}`, setReturnTo, async (req, res, next) => {
     try {
       await preRequest(req);
     } catch (e) {
@@ -182,7 +188,7 @@ export default (
     successReturnToOrRedirect: "/",
   });
 
-  app.get(`/auth/${service}/callback`, async (req, res, next) => {
+  app.get(`/auth/${serviceUrl}/callback`, async (req, res, next) => {
     try {
       await postRequest(req);
     } catch (e) {
