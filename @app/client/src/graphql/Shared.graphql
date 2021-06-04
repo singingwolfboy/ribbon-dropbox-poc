@@ -1,3 +1,4 @@
 query Shared {
   ...SharedLayout_Query
+  ...ClientData_Query
 }

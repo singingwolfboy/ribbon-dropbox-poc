@@ -49,6 +49,107 @@ type ChangePasswordPayload {
   success: Boolean
 }
 
+"""A client working with this agent."""
+type Client {
+  createdAt: Datetime!
+  id: Int!
+  name: String!
+
+  """Reads and enables pagination through a set of `Offer`."""
+  offers(
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: OfferCondition
+
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """The method to use when ordering `Offer`."""
+    orderBy: [OffersOrderBy!] = [PRIMARY_KEY_ASC]
+  ): OffersConnection!
+  updatedAt: Datetime!
+
+  """Reads a single `User` that is related to this `Client`."""
+  user: User
+  userId: UUID!
+}
+
+"""
+A condition to be used against `Client` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input ClientCondition {
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+
+  """Checks for equality with the object’s `userId` field."""
+  userId: UUID
+}
+
+"""An input for mutations affecting `Client`"""
+input ClientInput {
+  name: String!
+}
+
+"""
+Represents an update to a `Client`. Fields that are set will be updated.
+"""
+input ClientPatch {
+  name: String
+}
+
+"""A connection to a list of `Client` values."""
+type ClientsConnection {
+  """
+  A list of edges which contains the `Client` and cursor to aid in pagination.
+  """
+  edges: [ClientsEdge!]!
+
+  """A list of `Client` objects."""
+  nodes: [Client!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `Client` you could get from the connection."""
+  totalCount: Int!
+}
+
+"""A `Client` edge in the connection."""
+type ClientsEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `Client` at the end of the edge."""
+  node: Client!
+}
+
+"""Methods to use when ordering `Client`."""
+enum ClientsOrderBy {
+  ID_ASC
+  ID_DESC
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  USER_ID_ASC
+  USER_ID_DESC
+}
+
 """All input for the `confirmAccountDeletion` mutation."""
 input ConfirmAccountDeletionInput {
   """
@@ -72,6 +173,82 @@ type ConfirmAccountDeletionPayload {
   """
   query: Query
   success: Boolean
+}
+
+"""All input for the create `Client` mutation."""
+input CreateClientInput {
+  """The `Client` to be created by this mutation."""
+  client: ClientInput!
+
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+}
+
+"""The output of our create `Client` mutation."""
+type CreateClientPayload {
+  """The `Client` that was created by this mutation."""
+  client: Client
+
+  """An edge for our `Client`. May be used by Relay 1."""
+  clientEdge(
+    """The method to use when ordering `Client`."""
+    orderBy: [ClientsOrderBy!] = [PRIMARY_KEY_ASC]
+  ): ClientsEdge
+
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """Reads a single `User` that is related to this `Client`."""
+  user: User
+}
+
+"""All input for the create `Offer` mutation."""
+input CreateOfferInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `Offer` to be created by this mutation."""
+  offer: OfferInput!
+}
+
+"""The output of our create `Offer` mutation."""
+type CreateOfferPayload {
+  """Reads a single `Client` that is related to this `Offer`."""
+  client: Client
+
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `Offer` that was created by this mutation."""
+  offer: Offer
+
+  """An edge for our `Offer`. May be used by Relay 1."""
+  offerEdge(
+    """The method to use when ordering `Offer`."""
+    orderBy: [OffersOrderBy!] = [PRIMARY_KEY_ASC]
+  ): OffersEdge
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
 }
 
 """All input for the `createOrganization` mutation."""
@@ -152,6 +329,80 @@ A point in time as described by the [ISO
 8601](https://en.wikipedia.org/wiki/ISO_8601) standard. May or may not include a timezone.
 """
 scalar Datetime
+
+"""All input for the `deleteClient` mutation."""
+input DeleteClientInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int!
+}
+
+"""The output of our delete `Client` mutation."""
+type DeleteClientPayload {
+  """The `Client` that was deleted by this mutation."""
+  client: Client
+
+  """An edge for our `Client`. May be used by Relay 1."""
+  clientEdge(
+    """The method to use when ordering `Client`."""
+    orderBy: [ClientsOrderBy!] = [PRIMARY_KEY_ASC]
+  ): ClientsEdge
+
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  deletedClientNodeId: ID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """Reads a single `User` that is related to this `Client`."""
+  user: User
+}
+
+"""All input for the `deleteOffer` mutation."""
+input DeleteOfferInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int!
+}
+
+"""The output of our delete `Offer` mutation."""
+type DeleteOfferPayload {
+  """Reads a single `Client` that is related to this `Offer`."""
+  client: Client
+
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  deletedOfferNodeId: ID
+
+  """The `Offer` that was deleted by this mutation."""
+  offer: Offer
+
+  """An edge for our `Offer`. May be used by Relay 1."""
+  offerEdge(
+    """The method to use when ordering `Offer`."""
+    orderBy: [OffersOrderBy!] = [PRIMARY_KEY_ASC]
+  ): OffersEdge
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
 
 """All input for the `deleteOrganization` mutation."""
 input DeleteOrganizationInput {
@@ -389,6 +640,22 @@ type Mutation {
     input: ConfirmAccountDeletionInput!
   ): ConfirmAccountDeletionPayload
 
+  """Creates a single `Client`."""
+  createClient(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreateClientInput!
+  ): CreateClientPayload
+
+  """Creates a single `Offer`."""
+  createOffer(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreateOfferInput!
+  ): CreateOfferPayload
+
   """
   An `Organization` is a great way of sharing access to resources between multiple users without compromising security. When you create an organization you will have the 'owner' and 'billing contact' roles. You may invite other users and redistribute these roles.
   """
@@ -406,6 +673,22 @@ type Mutation {
     """
     input: CreateUserEmailInput!
   ): CreateUserEmailPayload
+
+  """Deletes a single `Client` using a unique key."""
+  deleteClient(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteClientInput!
+  ): DeleteClientPayload
+
+  """Deletes a single `Offer` using a unique key."""
+  deleteOffer(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteOfferInput!
+  ): DeleteOfferPayload
 
   """
   Only the 'owner' may delete an organization. This operation cannot be undone, so be sure that it is what you intend.
@@ -549,6 +832,22 @@ type Mutation {
     input: TransferOrganizationOwnershipInput!
   ): TransferOrganizationOwnershipPayload
 
+  """Updates a single `Client` using a unique key and a patch."""
+  updateClient(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateClientInput!
+  ): UpdateClientPayload
+
+  """Updates a single `Offer` using a unique key and a patch."""
+  updateOffer(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateOfferInput!
+  ): UpdateOfferPayload
+
   """Updates a single `Organization` using a unique key and a patch."""
   updateOrganization(
     """
@@ -574,6 +873,98 @@ type Mutation {
     """
     input: VerifyEmailInput!
   ): VerifyEmailPayload
+}
+
+"""An offer on a property, on behalf of a client."""
+type Offer {
+  """
+  The address of the property. Since this is a proof of concept, this may not be a valid address.
+  """
+  address: String!
+
+  """
+  The amount the client is willing to pay for the property, in US dollars.
+  """
+  amount: Float!
+
+  """Reads a single `Client` that is related to this `Offer`."""
+  client: Client
+  clientId: Int!
+  createdAt: Datetime!
+  id: Int!
+  updatedAt: Datetime!
+}
+
+"""
+A condition to be used against `Offer` object types. All fields are tested for equality and combined with a logical ‘and.’
+"""
+input OfferCondition {
+  """Checks for equality with the object’s `clientId` field."""
+  clientId: Int
+
+  """Checks for equality with the object’s `id` field."""
+  id: Int
+}
+
+"""An input for mutations affecting `Offer`"""
+input OfferInput {
+  """
+  The address of the property. Since this is a proof of concept, this may not be a valid address.
+  """
+  address: String!
+
+  """
+  The amount the client is willing to pay for the property, in US dollars.
+  """
+  amount: Float!
+  clientId: Int!
+}
+
+"""
+Represents an update to a `Offer`. Fields that are set will be updated.
+"""
+input OfferPatch {
+  """
+  The amount the client is willing to pay for the property, in US dollars.
+  """
+  amount: Float
+}
+
+"""A connection to a list of `Offer` values."""
+type OffersConnection {
+  """
+  A list of edges which contains the `Offer` and cursor to aid in pagination.
+  """
+  edges: [OffersEdge!]!
+
+  """A list of `Offer` objects."""
+  nodes: [Offer!]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `Offer` you could get from the connection."""
+  totalCount: Int!
+}
+
+"""A `Offer` edge in the connection."""
+type OffersEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `Offer` at the end of the edge."""
+  node: Offer!
+}
+
+"""Methods to use when ordering `Offer`."""
+enum OffersOrderBy {
+  CLIENT_ID_ASC
+  CLIENT_ID_DESC
+  ID_ASC
+  ID_DESC
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
 }
 
 type Organization {
@@ -767,8 +1158,69 @@ type PageInfo {
 
 """The root query type which gives access points into the data universe."""
 type Query {
+  client(id: Int!): Client
+
+  """Reads and enables pagination through a set of `Client`."""
+  clients(
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: ClientCondition
+
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """The method to use when ordering `Client`."""
+    orderBy: [ClientsOrderBy!] = [PRIMARY_KEY_ASC]
+  ): ClientsConnection
+
   """The currently logged in user (or null if not logged in)."""
   currentUser: User
+  offer(id: Int!): Offer
+
+  """Reads and enables pagination through a set of `Offer`."""
+  offers(
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: OfferCondition
+
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """The method to use when ordering `Offer`."""
+    orderBy: [OffersOrderBy!] = [PRIMARY_KEY_ASC]
+  ): OffersConnection
   organization(id: UUID!): Organization
   organizationBySlug(slug: String!): Organization
 
@@ -1002,6 +1454,88 @@ A universally unique identifier as defined by [RFC 4122](https://tools.ietf.org/
 """
 scalar UUID
 
+"""All input for the `updateClient` mutation."""
+input UpdateClientInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int!
+
+  """
+  An object where the defined keys will be set on the `Client` being updated.
+  """
+  patch: ClientPatch!
+}
+
+"""The output of our update `Client` mutation."""
+type UpdateClientPayload {
+  """The `Client` that was updated by this mutation."""
+  client: Client
+
+  """An edge for our `Client`. May be used by Relay 1."""
+  clientEdge(
+    """The method to use when ordering `Client`."""
+    orderBy: [ClientsOrderBy!] = [PRIMARY_KEY_ASC]
+  ): ClientsEdge
+
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """Reads a single `User` that is related to this `Client`."""
+  user: User
+}
+
+"""All input for the `updateOffer` mutation."""
+input UpdateOfferInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int!
+
+  """
+  An object where the defined keys will be set on the `Offer` being updated.
+  """
+  patch: OfferPatch!
+}
+
+"""The output of our update `Offer` mutation."""
+type UpdateOfferPayload {
+  """Reads a single `Client` that is related to this `Offer`."""
+  client: Client
+
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `Offer` that was updated by this mutation."""
+  offer: Offer
+
+  """An edge for our `Offer`. May be used by Relay 1."""
+  offerEdge(
+    """The method to use when ordering `Offer`."""
+    orderBy: [OffersOrderBy!] = [PRIMARY_KEY_ASC]
+  ): OffersEdge
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
 """All input for the `updateOrganization` mutation."""
 input UpdateOrganizationInput {
   """
@@ -1084,6 +1618,35 @@ type UpdateUserPayload {
 type User {
   """Optional avatar URL."""
   avatarUrl: String
+
+  """Reads and enables pagination through a set of `Client`."""
+  clients(
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """
+    A condition to be used in determining which values should be returned by the collection.
+    """
+    condition: ClientCondition
+
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """The method to use when ordering `Client`."""
+    orderBy: [ClientsOrderBy!] = [PRIMARY_KEY_ASC]
+  ): ClientsConnection!
   createdAt: Datetime!
   hasPassword: Boolean
 

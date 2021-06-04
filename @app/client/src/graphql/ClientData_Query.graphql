@@ -1,0 +1,25 @@
+fragment ClientData_Query on Query {
+  currentUser {
+    id
+    ...ClientData_User
+  }
+}
+
+fragment ClientData_User on User {
+  id
+  clients {
+    totalCount
+    nodes {
+      id
+      name
+      offers {
+        totalCount
+        nodes {
+          id
+          address
+          amount
+        }
+      }
+    }
+  }
+}

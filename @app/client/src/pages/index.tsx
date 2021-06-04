@@ -5,34 +5,32 @@ import { Store } from "rc-field-form/lib/interface";
 import * as React from "react";
 import { useCallback } from "react";
 const { Title, Paragraph } = Typography;
-import { SharedLayout } from "@app/components";
-import { useSharedQuery } from "@app/graphql";
+import { ClientList, SharedLayout } from "@app/components";
+import {
+  SharedDocument,
+  useCreateClientMutation,
+  useSharedQuery,
+} from "@app/graphql";
 import { NextPage } from "next";
-
-// Convenience helper
-const Li = ({ children, ...props }: any) => (
-  <li {...props}>
-    <Typography>{children}</Typography>
-  </li>
-);
 
 const Home: NextPage = () => {
   const query = useSharedQuery();
   const currentUser = query.data?.currentUser;
   const [form] = useForm();
+  const [createClient] = useCreateClientMutation();
 
-  const handleSubmit = useCallback(async (_values: Store) => {
-    try {
-      // await register({
-      //   variables: {
-      //     username: values.username,
-      //     email: values.email,
-      //     password: values.password,
-      //     name: values.name,
-      //   },
-      // });
-    } catch (e) {}
-  }, []);
+  const handleSubmit = useCallback(
+    async (values: Store) => {
+      await createClient({
+        variables: {
+          name: values.name,
+        },
+        refetchQueries: [{ query: SharedDocument }],
+      });
+      form.resetFields();
+    },
+    [createClient, form]
+  );
   return (
     <SharedLayout title="" query={query}>
       <Row justify="space-between" gutter={32}>
@@ -42,19 +40,17 @@ const Home: NextPage = () => {
           </Title>
           {currentUser ? (
             <React.Fragment>
-              <Paragraph>Here are your current offers:</Paragraph>
-              <ul>
-                <Li>One</Li>
-              </ul>
-              <Title level={2}>Create new offer</Title>
+              <Title level={2}>Current clients:</Title>
+              <ClientList user={currentUser} />
+              <Title level={2}>Create new client</Title>
               <Form {...formItemLayout} form={form} onFinish={handleSubmit}>
                 <Form.Item
-                  label="Address"
-                  name="address"
+                  label="Name"
+                  name="name"
                   rules={[
                     {
                       required: true,
-                      message: "Please input the property address.",
+                      message: "Please input the client's full name.",
                       whitespace: true,
                     },
                   ]}
@@ -62,7 +58,7 @@ const Home: NextPage = () => {
                   <Input />
                 </Form.Item>
                 <Form.Item {...tailFormItemLayout}>
-                  <Button htmlType="submit">Create Offer</Button>
+                  <Button htmlType="submit">Create Client</Button>
                 </Form.Item>
               </Form>
             </React.Fragment>

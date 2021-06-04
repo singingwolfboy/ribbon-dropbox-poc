@@ -1,0 +1,13 @@
+fragment CreatedClient on Client {
+  id
+  name
+}
+
+mutation CreateClient($name: String!) {
+  createClient(input: { client: { name: $name } }) {
+    client {
+      id
+      ...CreatedClient
+    }
+  }
+}

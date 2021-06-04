@@ -80,6 +80,29 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 
 
 --
+-- Name: current_user_dropbox_details(); Type: FUNCTION; Schema: app_hidden; Owner: -
+--
+
+CREATE FUNCTION app_hidden.current_user_dropbox_details() RETURNS json
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+    AS $$
+  SELECT uas.details
+  FROM app_private.user_authentication_secrets AS uas
+  JOIN app_public.user_authentications AS ua
+  ON uas.user_authentication_id = ua.id
+  WHERE ua.user_id = app_public.current_user_id()
+$$;
+
+
+--
+-- Name: FUNCTION current_user_dropbox_details(); Type: COMMENT; Schema: app_hidden; Owner: -
+--
+
+COMMENT ON FUNCTION app_hidden.current_user_dropbox_details() IS 'Handy method to get the Dropbox auth tokens for the current user.';
+
+
+--
 -- Name: assert_valid_password(text); Type: FUNCTION; Schema: app_private; Owner: -
 --
 
@@ -1845,6 +1868,102 @@ COMMENT ON TABLE app_private.user_secrets IS 'The contents of this table should 
 
 
 --
+-- Name: clients; Type: TABLE; Schema: app_public; Owner: -
+--
+
+CREATE TABLE app_public.clients (
+    id integer NOT NULL,
+    user_id uuid DEFAULT app_public.current_user_id() NOT NULL,
+    name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: TABLE clients; Type: COMMENT; Schema: app_public; Owner: -
+--
+
+COMMENT ON TABLE app_public.clients IS 'A client working with this agent.';
+
+
+--
+-- Name: clients_id_seq; Type: SEQUENCE; Schema: app_public; Owner: -
+--
+
+CREATE SEQUENCE app_public.clients_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: clients_id_seq; Type: SEQUENCE OWNED BY; Schema: app_public; Owner: -
+--
+
+ALTER SEQUENCE app_public.clients_id_seq OWNED BY app_public.clients.id;
+
+
+--
+-- Name: offers; Type: TABLE; Schema: app_public; Owner: -
+--
+
+CREATE TABLE app_public.offers (
+    id integer NOT NULL,
+    client_id integer NOT NULL,
+    address text NOT NULL,
+    amount money NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT offers_amount_check CHECK (((amount)::numeric > (0)::numeric))
+);
+
+
+--
+-- Name: TABLE offers; Type: COMMENT; Schema: app_public; Owner: -
+--
+
+COMMENT ON TABLE app_public.offers IS 'An offer on a property, on behalf of a client.';
+
+
+--
+-- Name: COLUMN offers.address; Type: COMMENT; Schema: app_public; Owner: -
+--
+
+COMMENT ON COLUMN app_public.offers.address IS 'The address of the property. Since this is a proof of concept, this may not be a valid address.';
+
+
+--
+-- Name: COLUMN offers.amount; Type: COMMENT; Schema: app_public; Owner: -
+--
+
+COMMENT ON COLUMN app_public.offers.amount IS 'The amount the client is willing to pay for the property, in US dollars.';
+
+
+--
+-- Name: offers_id_seq; Type: SEQUENCE; Schema: app_public; Owner: -
+--
+
+CREATE SEQUENCE app_public.offers_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: offers_id_seq; Type: SEQUENCE OWNED BY; Schema: app_public; Owner: -
+--
+
+ALTER SEQUENCE app_public.offers_id_seq OWNED BY app_public.offers.id;
+
+
+--
 -- Name: organization_invitations; Type: TABLE; Schema: app_public; Owner: -
 --
 
@@ -1917,6 +2036,20 @@ COMMENT ON COLUMN app_public.user_authentications.details IS 'Additional profile
 
 
 --
+-- Name: clients id; Type: DEFAULT; Schema: app_public; Owner: -
+--
+
+ALTER TABLE ONLY app_public.clients ALTER COLUMN id SET DEFAULT nextval('app_public.clients_id_seq'::regclass);
+
+
+--
+-- Name: offers id; Type: DEFAULT; Schema: app_public; Owner: -
+--
+
+ALTER TABLE ONLY app_public.offers ALTER COLUMN id SET DEFAULT nextval('app_public.offers_id_seq'::regclass);
+
+
+--
 -- Name: connect_pg_simple_sessions session_pkey; Type: CONSTRAINT; Schema: app_private; Owner: -
 --
 
@@ -1962,6 +2095,22 @@ ALTER TABLE ONLY app_private.user_email_secrets
 
 ALTER TABLE ONLY app_private.user_secrets
     ADD CONSTRAINT user_secrets_pkey PRIMARY KEY (user_id);
+
+
+--
+-- Name: clients clients_pkey; Type: CONSTRAINT; Schema: app_public; Owner: -
+--
+
+ALTER TABLE ONLY app_public.clients
+    ADD CONSTRAINT clients_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: offers offers_pkey; Type: CONSTRAINT; Schema: app_public; Owner: -
+--
+
+ALTER TABLE ONLY app_public.offers
+    ADD CONSTRAINT offers_pkey PRIMARY KEY (id);
 
 
 --
@@ -2076,6 +2225,13 @@ CREATE INDEX sessions_user_id_idx ON app_private.sessions USING btree (user_id);
 
 
 --
+-- Name: clients_user_id_idx; Type: INDEX; Schema: app_public; Owner: -
+--
+
+CREATE INDEX clients_user_id_idx ON app_public.clients USING btree (user_id);
+
+
+--
 -- Name: idx_user_emails_primary; Type: INDEX; Schema: app_public; Owner: -
 --
 
@@ -2087,6 +2243,13 @@ CREATE INDEX idx_user_emails_primary ON app_public.user_emails USING btree (is_p
 --
 
 CREATE INDEX idx_user_emails_user ON app_public.user_emails USING btree (user_id);
+
+
+--
+-- Name: offers_client_id_idx; Type: INDEX; Schema: app_public; Owner: -
+--
+
+CREATE INDEX offers_client_id_idx ON app_public.offers USING btree (client_id);
 
 
 --
@@ -2122,6 +2285,20 @@ CREATE UNIQUE INDEX uniq_user_emails_verified_email ON app_public.user_emails US
 --
 
 CREATE INDEX user_authentications_user_id_idx ON app_public.user_authentications USING btree (user_id);
+
+
+--
+-- Name: clients _100_timestamps; Type: TRIGGER; Schema: app_public; Owner: -
+--
+
+CREATE TRIGGER _100_timestamps BEFORE INSERT OR UPDATE ON app_public.clients FOR EACH ROW EXECUTE FUNCTION app_private.tg__timestamps();
+
+
+--
+-- Name: offers _100_timestamps; Type: TRIGGER; Schema: app_public; Owner: -
+--
+
+CREATE TRIGGER _100_timestamps BEFORE INSERT OR UPDATE ON app_public.offers FOR EACH ROW EXECUTE FUNCTION app_private.tg__timestamps();
 
 
 --
@@ -2262,6 +2439,22 @@ ALTER TABLE ONLY app_private.user_secrets
 
 
 --
+-- Name: clients clients_user_id_fkey; Type: FK CONSTRAINT; Schema: app_public; Owner: -
+--
+
+ALTER TABLE ONLY app_public.clients
+    ADD CONSTRAINT clients_user_id_fkey FOREIGN KEY (user_id) REFERENCES app_public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: offers offers_client_id_fkey; Type: FK CONSTRAINT; Schema: app_public; Owner: -
+--
+
+ALTER TABLE ONLY app_public.offers
+    ADD CONSTRAINT offers_client_id_fkey FOREIGN KEY (client_id) REFERENCES app_public.clients(id) ON DELETE CASCADE;
+
+
+--
 -- Name: organization_invitations organization_invitations_organization_id_fkey; Type: FK CONSTRAINT; Schema: app_public; Owner: -
 --
 
@@ -2340,6 +2533,12 @@ ALTER TABLE app_private.user_email_secrets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app_private.user_secrets ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: clients; Type: ROW SECURITY; Schema: app_public; Owner: -
+--
+
+ALTER TABLE app_public.clients ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: user_authentications delete_own; Type: POLICY; Schema: app_public; Owner: -
 --
 
@@ -2359,6 +2558,46 @@ CREATE POLICY delete_own ON app_public.user_emails FOR DELETE USING ((user_id = 
 
 CREATE POLICY insert_own ON app_public.user_emails FOR INSERT WITH CHECK ((user_id = app_public.current_user_id()));
 
+
+--
+-- Name: clients manage_as_admin; Type: POLICY; Schema: app_public; Owner: -
+--
+
+CREATE POLICY manage_as_admin ON app_public.clients USING ((EXISTS ( SELECT 1
+   FROM app_public.users
+  WHERE ((users.is_admin IS TRUE) AND (users.id = app_public.current_user_id())))));
+
+
+--
+-- Name: offers manage_as_admin; Type: POLICY; Schema: app_public; Owner: -
+--
+
+CREATE POLICY manage_as_admin ON app_public.offers USING ((EXISTS ( SELECT 1
+   FROM app_public.users
+  WHERE ((users.is_admin IS TRUE) AND (users.id = app_public.current_user_id())))));
+
+
+--
+-- Name: clients manage_own; Type: POLICY; Schema: app_public; Owner: -
+--
+
+CREATE POLICY manage_own ON app_public.clients USING ((user_id = app_public.current_user_id()));
+
+
+--
+-- Name: offers manage_own; Type: POLICY; Schema: app_public; Owner: -
+--
+
+CREATE POLICY manage_own ON app_public.offers USING ((client_id IN ( SELECT clients.id
+   FROM app_public.clients
+  WHERE (clients.user_id = app_public.current_user_id()))));
+
+
+--
+-- Name: offers; Type: ROW SECURITY; Schema: app_public; Owner: -
+--
+
+ALTER TABLE app_public.offers ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: organization_invitations; Type: ROW SECURITY; Schema: app_public; Owner: -
@@ -2411,6 +2650,22 @@ CREATE POLICY select_member ON app_public.organization_memberships FOR SELECT US
 --
 
 CREATE POLICY select_member ON app_public.organizations FOR SELECT USING ((id IN ( SELECT app_public.current_user_member_organization_ids() AS current_user_member_organization_ids)));
+
+
+--
+-- Name: clients select_own; Type: POLICY; Schema: app_public; Owner: -
+--
+
+CREATE POLICY select_own ON app_public.clients FOR SELECT USING ((user_id = app_public.current_user_id()));
+
+
+--
+-- Name: offers select_own; Type: POLICY; Schema: app_public; Owner: -
+--
+
+CREATE POLICY select_own ON app_public.offers FOR SELECT USING ((client_id IN ( SELECT clients.id
+   FROM app_public.clients
+  WHERE (clients.user_id = app_public.current_user_id()))));
 
 
 --
@@ -2479,10 +2734,18 @@ GRANT USAGE ON SCHEMA app_public TO graphile_starter_visitor;
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: -
 --
 
-REVOKE ALL ON SCHEMA public FROM postgres;
+REVOKE ALL ON SCHEMA public FROM singingwolfboy;
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 GRANT ALL ON SCHEMA public TO graphile_starter;
 GRANT USAGE ON SCHEMA public TO graphile_starter_visitor;
+
+
+--
+-- Name: FUNCTION current_user_dropbox_details(); Type: ACL; Schema: app_hidden; Owner: -
+--
+
+REVOKE ALL ON FUNCTION app_hidden.current_user_dropbox_details() FROM PUBLIC;
+GRANT ALL ON FUNCTION app_hidden.current_user_dropbox_details() TO graphile_starter_visitor;
 
 
 --
@@ -2855,6 +3118,62 @@ GRANT ALL ON FUNCTION app_public.users_has_password(u app_public.users) TO graph
 
 REVOKE ALL ON FUNCTION app_public.verify_email(user_email_id uuid, token text) FROM PUBLIC;
 GRANT ALL ON FUNCTION app_public.verify_email(user_email_id uuid, token text) TO graphile_starter_visitor;
+
+
+--
+-- Name: TABLE clients; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT SELECT,DELETE ON TABLE app_public.clients TO graphile_starter_visitor;
+
+
+--
+-- Name: COLUMN clients.name; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT INSERT(name),UPDATE(name) ON TABLE app_public.clients TO graphile_starter_visitor;
+
+
+--
+-- Name: SEQUENCE clients_id_seq; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT SELECT,USAGE ON SEQUENCE app_public.clients_id_seq TO graphile_starter_visitor;
+
+
+--
+-- Name: TABLE offers; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT SELECT,DELETE ON TABLE app_public.offers TO graphile_starter_visitor;
+
+
+--
+-- Name: COLUMN offers.client_id; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT INSERT(client_id) ON TABLE app_public.offers TO graphile_starter_visitor;
+
+
+--
+-- Name: COLUMN offers.address; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT INSERT(address) ON TABLE app_public.offers TO graphile_starter_visitor;
+
+
+--
+-- Name: COLUMN offers.amount; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT INSERT(amount),UPDATE(amount) ON TABLE app_public.offers TO graphile_starter_visitor;
+
+
+--
+-- Name: SEQUENCE offers_id_seq; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT SELECT,USAGE ON SEQUENCE app_public.offers_id_seq TO graphile_starter_visitor;
 
 
 --

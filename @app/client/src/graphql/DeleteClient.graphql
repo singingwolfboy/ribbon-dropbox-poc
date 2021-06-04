@@ -1,0 +1,5 @@
+mutation DeleteClient($id: Int!) {
+  deleteClient(input: { id: $id }) {
+    deletedClientNodeId
+  }
+}
