@@ -52,6 +52,7 @@ type ChangePasswordPayload {
 """A client working with this agent."""
 type Client {
   createdAt: Datetime!
+  hasPreapproval: Boolean!
   id: Int!
   name: String!
 
@@ -110,6 +111,7 @@ input ClientInput {
 Represents an update to a `Client`. Fields that are set will be updated.
 """
 input ClientPatch {
+  hasPreapproval: Boolean
   name: String
 }
 

@@ -675,6 +675,33 @@ COMMENT ON FUNCTION app_private.tg__add_job() IS 'Useful shortcut to create a jo
 
 
 --
+-- Name: tg__before_client_delete__add_job(); Type: FUNCTION; Schema: app_private; Owner: -
+--
+
+CREATE FUNCTION app_private.tg__before_client_delete__add_job() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+    AS $$
+begin
+  perform graphile_worker.add_job(tg_argv[0], json_build_object(
+    'id', OLD.id,
+    'user_id', OLD.user_id,
+    'name', OLD.name,
+    'dropbox_preapproval_file_request_id', OLD.dropbox_preapproval_file_request_id
+  ));
+  return OLD;
+end;
+$$;
+
+
+--
+-- Name: FUNCTION tg__before_client_delete__add_job(); Type: COMMENT; Schema: app_private; Owner: -
+--
+
+COMMENT ON FUNCTION app_private.tg__before_client_delete__add_job() IS 'Useful shortcut to create a job on client delete. Pass the task name as the first trigger argument.';
+
+
+--
 -- Name: tg__timestamps(); Type: FUNCTION; Schema: app_private; Owner: -
 --
 
@@ -1875,6 +1902,8 @@ CREATE TABLE app_public.clients (
     id integer NOT NULL,
     user_id uuid DEFAULT app_public.current_user_id() NOT NULL,
     name text NOT NULL,
+    dropbox_preapproval_file_request_id text,
+    has_preapproval boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -1885,6 +1914,13 @@ CREATE TABLE app_public.clients (
 --
 
 COMMENT ON TABLE app_public.clients IS 'A client working with this agent.';
+
+
+--
+-- Name: COLUMN clients.dropbox_preapproval_file_request_id; Type: COMMENT; Schema: app_public; Owner: -
+--
+
+COMMENT ON COLUMN app_public.clients.dropbox_preapproval_file_request_id IS '@omit';
 
 
 --
@@ -2323,10 +2359,24 @@ CREATE TRIGGER _100_timestamps BEFORE INSERT OR UPDATE ON app_public.users FOR E
 
 
 --
+-- Name: clients _200_add_dropbox; Type: TRIGGER; Schema: app_public; Owner: -
+--
+
+CREATE TRIGGER _200_add_dropbox AFTER INSERT ON app_public.clients FOR EACH ROW EXECUTE FUNCTION app_private.tg__add_job('client__add_to_dropbox');
+
+
+--
 -- Name: user_emails _200_forbid_existing_email; Type: TRIGGER; Schema: app_public; Owner: -
 --
 
 CREATE TRIGGER _200_forbid_existing_email BEFORE INSERT ON app_public.user_emails FOR EACH ROW EXECUTE FUNCTION app_public.tg_user_emails__forbid_if_verified();
+
+
+--
+-- Name: clients _200_remove_dropbox; Type: TRIGGER; Schema: app_public; Owner: -
+--
+
+CREATE TRIGGER _200_remove_dropbox BEFORE DELETE ON app_public.clients FOR EACH ROW EXECUTE FUNCTION app_private.tg__before_client_delete__add_job('client__remove_from_dropbox');
 
 
 --
@@ -2833,6 +2883,13 @@ REVOKE ALL ON FUNCTION app_private.tg__add_job() FROM PUBLIC;
 
 
 --
+-- Name: FUNCTION tg__before_client_delete__add_job(); Type: ACL; Schema: app_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION app_private.tg__before_client_delete__add_job() FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION tg__timestamps(); Type: ACL; Schema: app_private; Owner: -
 --
 
@@ -3132,6 +3189,20 @@ GRANT SELECT,DELETE ON TABLE app_public.clients TO graphile_starter_visitor;
 --
 
 GRANT INSERT(name),UPDATE(name) ON TABLE app_public.clients TO graphile_starter_visitor;
+
+
+--
+-- Name: COLUMN clients.dropbox_preapproval_file_request_id; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT UPDATE(dropbox_preapproval_file_request_id) ON TABLE app_public.clients TO graphile_starter_visitor;
+
+
+--
+-- Name: COLUMN clients.has_preapproval; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT UPDATE(has_preapproval) ON TABLE app_public.clients TO graphile_starter_visitor;
 
 
 --
