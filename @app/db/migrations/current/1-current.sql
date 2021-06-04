@@ -118,3 +118,14 @@ relevant operations on them. The tables will appear when you uncomment the
 -- comment on table app_public.user_feed_posts is 'A feed of `Post`s relevant to a particular `User`.';
 -- comment on column app_public.user_feed_posts.id is 'An identifier for this entry in the feed.';
 -- comment on column app_public.user_feed_posts.created_at is 'The time this feed item was added.';
+
+drop function if exists app_hidden.current_user_dropbox_details;
+create function app_hidden.current_user_dropbox_details() returns json as $$
+  SELECT uas.details
+  FROM app_private.user_authentication_secrets AS uas
+  JOIN app_public.user_authentications AS ua
+  ON uas.user_authentication_id = ua.id
+  WHERE ua.user_id = app_public.current_user_id()
+$$ language sql stable security definer set search_path to pg_catalog, public, pg_temp;
+comment on function app_hidden.current_user_dropbox_details() is
+  E'Handy method to get the Dropbox auth tokens for the current user.';

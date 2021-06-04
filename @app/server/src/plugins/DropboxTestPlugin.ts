@@ -1,34 +1,29 @@
 import { Dropbox } from "dropbox";
 import { gql, makeExtendSchemaPlugin } from "graphile-utils";
-import { Pool, PoolClient } from "pg";
+import { PoolClient } from "pg";
 
 import { OurGraphQLContext } from "../middleware/installPostGraphile";
 
-const currentUserDropboxToken = async (
-  pgClient: PoolClient,
-  rootPgPool: Pool
-): Promise<string> => {
+interface TokenDetails {
+  accessToken: string;
+  refreshToken: string;
+}
+
+const currentUserDropboxDetails = async (
+  pgClient: PoolClient
+): Promise<TokenDetails> => {
   const {
-    rows: [{ id: currentUserId }],
-  } = await pgClient.query("select app_public.current_user_id() as id;");
-  const results = await rootPgPool.query(
-    `
-      SELECT uas.details
-      FROM app_private.user_authentication_secrets AS uas
-      JOIN app_public.user_authentications AS ua
-      ON uas.user_authentication_id = ua.id
-      WHERE ua.user_id = $1;
-      `,
-    [currentUserId]
+    rows: [row],
+  } = await pgClient.query(
+    "select app_hidden.current_user_dropbox_details() as details;"
   );
-  const userAuth = results.rows[0];
-  if (!userAuth) {
-    throw new Error("oopsie");
+  if (!row) {
+    throw new Error("You're not logged in");
   }
-  return userAuth.details.token;
+  return row.details;
 };
 
-const DropboxTestPlugin = makeExtendSchemaPlugin((build) => ({
+const DropboxTestPlugin = makeExtendSchemaPlugin(() => ({
   typeDefs: gql`
     """
     whatever
@@ -63,14 +58,14 @@ const DropboxTestPlugin = makeExtendSchemaPlugin((build) => ({
         context: OurGraphQLContext,
         _resolveInfo
       ) {
-        const { sessionId, pgClient, rootPgPool } = context;
+        const { sessionId, pgClient } = context;
         // if there's no sessionId, fail fast
         if (!sessionId) {
           throw new Error("You're not logged in");
         }
-        const token = await currentUserDropboxToken(pgClient, rootPgPool);
+        const tokenDetails = await currentUserDropboxDetails(pgClient);
 
-        const dbx = new Dropbox({ accessToken: token });
+        const dbx = new Dropbox(tokenDetails);
         await dbx.filesUpload({ path: "/test.txt", contents: "whatever" });
         return {
           success: true,

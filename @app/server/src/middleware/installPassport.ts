@@ -10,6 +10,10 @@ interface DbSession {
   session_id: string;
 }
 
+interface DropboxAuthorizationOptions {
+  offline?: boolean;
+}
+
 declare global {
   namespace Express {
     interface User {
@@ -41,6 +45,16 @@ export default async (app: Express) => {
   });
 
   if (process.env.DROPBOX_KEY) {
+    // hack for offline support
+    DropboxStrategy.prototype.authorizationParams = (
+      options: DropboxAuthorizationOptions
+    ) => {
+      if (options.offline) {
+        return { token_access_type: "offline" };
+      }
+      return {};
+    };
+
     await installPassportStrategy(
       app,
       "dropbox-oauth2",
@@ -56,7 +70,7 @@ export default async (app: Express) => {
           "file_requests.write",
         ].join(" "),
       },
-      {},
+      { offline: true },
       async (profile, _accessToken, _refreshToken, _extra, _req) => {
         const email = get(profile, "emails[0].value");
         return {
@@ -67,7 +81,7 @@ export default async (app: Express) => {
           email: email,
         };
       },
-      ["token", "tokenSecret"]
+      ["accessToken", "refreshToken"]
     );
   }
 };
