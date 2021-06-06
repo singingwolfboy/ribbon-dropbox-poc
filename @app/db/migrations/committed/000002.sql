@@ -1,5 +1,5 @@
 --! Previous: sha1:fbd6ffb5be53e7e0bfc63929a52cfc13e698c5f0
---! Hash: sha1:f1fc274937714000b6780d01802b35168d891c78
+--! Hash: sha1:fac89bc577d66c2c28a79d5c4fcc8e7fee921f91
 
 --! split: 1-current.sql
 drop function if exists app_hidden.current_user_dropbox_details;
@@ -23,6 +23,8 @@ create table app_public.clients (
   slug             citext not null unique,
   dropbox_preapproval_file_request_id
                    text,
+  dropbox_preapproval_file_request_url
+                   text,
   has_preapproval  boolean not null default false,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
@@ -35,7 +37,7 @@ create trigger _100_timestamps before insert or update on app_public.clients for
 grant
   select,
   insert (name, slug),
-  update (name, slug, dropbox_preapproval_file_request_id, has_preapproval),
+  update (name, slug, dropbox_preapproval_file_request_id, dropbox_preapproval_file_request_url, has_preapproval),
   delete
 on app_public.clients to :DATABASE_VISITOR;
 
@@ -47,7 +49,7 @@ comment on table app_public.clients is 'A client working with this agent.';
 comment on column app_public.clients.slug is 'A unique value for the URL.';
 comment on column app_public.clients.dropbox_preapproval_file_request_id is E'@omit';
 
-CREATE TRIGGER _200_add_dropbox AFTER INSERT ON app_public.clients FOR EACH ROW EXECUTE FUNCTION app_private.tg__add_job('client__add_to_dropbox');
+create trigger _200_add_dropbox after insert on app_public.clients for each row execute function app_private.tg__add_job('client__add_to_dropbox');
 
 create or replace function app_private.tg__before_client_delete__add_job() returns trigger as $$
 begin
@@ -64,7 +66,7 @@ $$ language plpgsql volatile security definer set search_path to pg_catalog, pub
 comment on function app_private.tg__before_client_delete__add_job() is
   E'Useful shortcut to create a job on client delete. Pass the task name as the first trigger argument.';
 
-CREATE TRIGGER _200_remove_dropbox BEFORE DELETE ON app_public.clients FOR EACH ROW EXECUTE FUNCTION app_private.tg__before_client_delete__add_job('client__remove_from_dropbox');
+create trigger _200_remove_dropbox before delete on app_public.clients for each row execute function app_private.tg__before_client_delete__add_job('client__remove_from_dropbox');
 
 
 create table app_public.offers (
@@ -100,3 +102,25 @@ comment on table app_public.offers is 'An offer on a property, on behalf of a cl
 comment on column app_public.offers.address is 'The address of the property. Since this is a proof of concept, this may not be a valid address.';
 comment on column app_public.offers.slug is 'A unique value for the URL.';
 comment on column app_public.offers.amount is 'The amount the client is willing to pay for the property, in US dollars.';
+
+
+create trigger _200_add_dropbox after insert on app_public.offers for each row execute function app_private.tg__add_job('offer__add_to_dropbox');
+
+create or replace function app_private.tg__before_offer_delete__add_job() returns trigger as $$
+declare
+  v_client app_public.clients;
+begin
+  select * into v_client from app_public.clients where clients.id = OLD.client_id;
+  perform graphile_worker.add_job(tg_argv[0], json_build_object(
+    'id', OLD.id,
+    'user_id', v_client.user_id,
+    'slug', OLD.slug,
+    'client_slug', v_client.slug
+  ));
+  return OLD;
+end;
+$$ language plpgsql volatile security definer set search_path to pg_catalog, public, pg_temp;
+comment on function app_private.tg__before_offer_delete__add_job() is
+  E'Useful shortcut to create a job on offer delete. Pass the task name as the first trigger argument.';
+
+create trigger _200_remove_dropbox before delete on app_public.offers for each row execute function app_private.tg__before_offer_delete__add_job('offer__remove_from_dropbox');

@@ -703,6 +703,36 @@ COMMENT ON FUNCTION app_private.tg__before_client_delete__add_job() IS 'Useful s
 
 
 --
+-- Name: tg__before_offer_delete__add_job(); Type: FUNCTION; Schema: app_private; Owner: -
+--
+
+CREATE FUNCTION app_private.tg__before_offer_delete__add_job() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+    AS $$
+declare
+  v_client app_public.clients;
+begin
+  select * into v_client from app_public.clients where clients.id = OLD.client_id;
+  perform graphile_worker.add_job(tg_argv[0], json_build_object(
+    'id', OLD.id,
+    'user_id', v_client.user_id,
+    'slug', OLD.slug,
+    'client_slug', v_client.slug
+  ));
+  return OLD;
+end;
+$$;
+
+
+--
+-- Name: FUNCTION tg__before_offer_delete__add_job(); Type: COMMENT; Schema: app_private; Owner: -
+--
+
+COMMENT ON FUNCTION app_private.tg__before_offer_delete__add_job() IS 'Useful shortcut to create a job on offer delete. Pass the task name as the first trigger argument.';
+
+
+--
 -- Name: tg__timestamps(); Type: FUNCTION; Schema: app_private; Owner: -
 --
 
@@ -1905,6 +1935,7 @@ CREATE TABLE app_public.clients (
     name text NOT NULL,
     slug public.citext NOT NULL,
     dropbox_preapproval_file_request_id text,
+    dropbox_preapproval_file_request_url text,
     has_preapproval boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -2399,6 +2430,13 @@ CREATE TRIGGER _200_add_dropbox AFTER INSERT ON app_public.clients FOR EACH ROW 
 
 
 --
+-- Name: offers _200_add_dropbox; Type: TRIGGER; Schema: app_public; Owner: -
+--
+
+CREATE TRIGGER _200_add_dropbox AFTER INSERT ON app_public.offers FOR EACH ROW EXECUTE FUNCTION app_private.tg__add_job('offer__add_to_dropbox');
+
+
+--
 -- Name: user_emails _200_forbid_existing_email; Type: TRIGGER; Schema: app_public; Owner: -
 --
 
@@ -2410,6 +2448,13 @@ CREATE TRIGGER _200_forbid_existing_email BEFORE INSERT ON app_public.user_email
 --
 
 CREATE TRIGGER _200_remove_dropbox BEFORE DELETE ON app_public.clients FOR EACH ROW EXECUTE FUNCTION app_private.tg__before_client_delete__add_job('client__remove_from_dropbox');
+
+
+--
+-- Name: offers _200_remove_dropbox; Type: TRIGGER; Schema: app_public; Owner: -
+--
+
+CREATE TRIGGER _200_remove_dropbox BEFORE DELETE ON app_public.offers FOR EACH ROW EXECUTE FUNCTION app_private.tg__before_offer_delete__add_job('offer__remove_from_dropbox');
 
 
 --
@@ -2923,6 +2968,13 @@ REVOKE ALL ON FUNCTION app_private.tg__before_client_delete__add_job() FROM PUBL
 
 
 --
+-- Name: FUNCTION tg__before_offer_delete__add_job(); Type: ACL; Schema: app_private; Owner: -
+--
+
+REVOKE ALL ON FUNCTION app_private.tg__before_offer_delete__add_job() FROM PUBLIC;
+
+
+--
 -- Name: FUNCTION tg__timestamps(); Type: ACL; Schema: app_private; Owner: -
 --
 
@@ -3236,6 +3288,13 @@ GRANT INSERT(slug),UPDATE(slug) ON TABLE app_public.clients TO graphile_starter_
 --
 
 GRANT UPDATE(dropbox_preapproval_file_request_id) ON TABLE app_public.clients TO graphile_starter_visitor;
+
+
+--
+-- Name: COLUMN clients.dropbox_preapproval_file_request_url; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT UPDATE(dropbox_preapproval_file_request_url) ON TABLE app_public.clients TO graphile_starter_visitor;
 
 
 --

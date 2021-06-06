@@ -1,9 +1,10 @@
 import { Dropbox } from "dropbox";
 import { Task } from "graphile-worker";
+import { PoolClient } from "pg";
 
-interface ClientAddToDropboxPayload {
+interface OfferAddToDropboxPayload {
   /**
-   * client id
+   * offer id
    */
   id: string;
 }
@@ -13,23 +14,45 @@ interface TokenDetails {
   refreshToken: string;
 }
 
-const task: Task = async (inPayload, { withPgClient }) => {
-  const payload: ClientAddToDropboxPayload = inPayload as any;
-  const { id: clientId } = payload;
+interface Offer {
+  id: number;
+  user_id: number;
+  slug: string;
+  client_slug: string;
+}
+
+const getOfferById = async (
+  offerId: number,
+  pgClient: PoolClient
+): Promise<Offer | undefined> => {
   const {
-    rows: [client],
-  } = await withPgClient((pgClient) =>
-    pgClient.query(
-      `
-        select *
-        from app_public.clients
-        where id = $1
-      `,
-      [clientId]
-    )
+    rows: [row],
+  } = await pgClient.query(
+    `
+      select
+        o.id as id,
+        c.user_id as user_id,
+        o.slug as slug,
+        c.slug as client_slug
+      from app_public.offers as o
+      join app_public.clients as c
+      on o.client_id = c.id
+      where o.id = $1
+    `,
+    [offerId]
   );
-  if (!client) {
-    console.error("Client not found; aborting");
+  return row;
+};
+
+const task: Task = async (inPayload, { withPgClient }) => {
+  const payload: OfferAddToDropboxPayload = inPayload as any;
+  const { id: offerId } = payload;
+  const offer = await withPgClient((pgClient) =>
+    getOfferById(parseInt(offerId), pgClient)
+  );
+
+  if (!offer) {
+    console.error("Offer not found; aborting");
     return;
   }
 
@@ -45,7 +68,7 @@ const task: Task = async (inPayload, { withPgClient }) => {
       ON uas.user_authentication_id = ua.id
       WHERE ua.user_id = $1
       `,
-      [client.user_id]
+      [offer.user_id]
     )
   );
   if (!uas) {
@@ -59,8 +82,8 @@ const task: Task = async (inPayload, { withPgClient }) => {
     clientSecret: process.env.DROPBOX_SECRET,
   });
 
-  // make Dropbox folder for client
-  const path = `/${client.slug}`;
+  // make Dropbox folder for offer
+  const path = `/${offer.client_slug}/${offer.slug}`;
   await dbx
     .filesCreateFolderV2({
       path,

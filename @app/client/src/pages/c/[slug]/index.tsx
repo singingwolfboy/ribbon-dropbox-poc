@@ -1,4 +1,5 @@
 import {
+  ClientPreapproval,
   OfferList,
   SharedLayout,
   useClientLoading,
@@ -66,43 +67,42 @@ const ClientPageInner: FC<ClientPageInnerProps> = (props) => {
   return (
     <Row>
       <Col flex={1}>
-        <div>
-          <Title level={2}>Current offers:</Title>
-          <OfferList client={client} />
-          <Title level={2}>Create new offer</Title>
-          <Form {...formItemLayout} form={form} onFinish={handleSubmit}>
-            <Form.Item
-              label="Address"
-              name="address"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input the address of the property.",
-                  whitespace: true,
-                },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              label="Amount"
-              name="amount"
-              rules={[
-                {
-                  required: true,
-                  type: "number",
-                  message: "Amount the client wishes to offer, in US Dollars",
-                  whitespace: true,
-                },
-              ]}
-            >
-              <InputNumber style={{ width: 200 }} />
-            </Form.Item>
-            <Form.Item {...tailFormItemLayout}>
-              <Button htmlType="submit">Create Offer</Button>
-            </Form.Item>
-          </Form>
-        </div>
+        <ClientPreapproval client={client} />
+        <Title level={2}>Current offers:</Title>
+        <OfferList client={client} />
+        <Title level={2}>Create new offer</Title>
+        <Form {...formItemLayout} form={form} onFinish={handleSubmit}>
+          <Form.Item
+            label="Address"
+            name="address"
+            rules={[
+              {
+                required: true,
+                message: "Please input the address of the property.",
+                whitespace: true,
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Amount"
+            name="amount"
+            rules={[
+              {
+                required: true,
+                type: "number",
+                message: "Amount the client wishes to offer, in US Dollars",
+                whitespace: true,
+              },
+            ]}
+          >
+            <InputNumber style={{ width: 200 }} />
+          </Form.Item>
+          <Form.Item {...tailFormItemLayout}>
+            <Button htmlType="submit">Create Offer</Button>
+          </Form.Item>
+        </Form>
       </Col>
     </Row>
   );

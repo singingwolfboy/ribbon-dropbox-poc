@@ -2,6 +2,8 @@ fragment ClientPage_Client on Client {
   id
   name
   slug
+  hasPreapproval
+  dropboxPreapprovalFileRequestUrl
   offers {
     totalCount
     nodes {

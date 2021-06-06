@@ -4,7 +4,6 @@ import { Task } from "graphile-worker";
 interface ClientRemoveFromDropboxPayload {
   id: string;
   user_id: string;
-  name: string;
   slug: string;
   dropbox_preapproval_file_request_id: string | null;
 }
@@ -20,8 +19,8 @@ const task: Task = async (inPayload, { withPgClient }) => {
     console.error("Missing user_id; aborting");
     return;
   }
-  if (!payload.name) {
-    console.error("Missing name; aborting");
+  if (!payload.slug) {
+    console.error("Missing slug; aborting");
     return;
   }
 
@@ -45,18 +44,22 @@ const task: Task = async (inPayload, { withPgClient }) => {
     return;
   }
   const tokenDetails = uas.details as TokenDetails;
-  const dbx = new Dropbox(tokenDetails);
+  const dbx = new Dropbox({
+    ...tokenDetails,
+    clientId: process.env.DROPBOX_KEY,
+    clientSecret: process.env.DROPBOX_SECRET,
+  });
 
   // delete Dropbox folder for client
-  await dbx.filesDeleteV2({ path: `/${payload.name}` }).catch((err) => {
-    console.log(err);
+  await dbx.filesDeleteV2({ path: `/${payload.slug}` }).catch((err) => {
+    console.error(err);
   });
 
   // if we have an open file request for the preapproval file, close it
   const fileRequestId = payload.dropbox_preapproval_file_request_id;
   if (fileRequestId) {
     await dbx.fileRequestsDelete({ ids: [fileRequestId] }).catch((err) => {
-      console.log(err);
+      console.error(err);
     });
   }
 };

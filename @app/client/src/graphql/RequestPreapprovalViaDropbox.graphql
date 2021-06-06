@@ -1,0 +1,6 @@
+mutation RequestPreapprovalViaDropbox($clientId: Int!) {
+  requestPreapprovalViaDropbox(input: { clientId: $clientId }) {
+    success
+    fileRequestUrl
+  }
+}

@@ -15,7 +15,7 @@ import {
 import { makePgSmartTagsFromFilePlugin } from "postgraphile/plugins";
 
 import { getHttpServer, getWebsocketMiddlewares } from "../app";
-import DropboxTestPlugin from "../plugins/DropboxTestPlugin";
+import DropboxPlugin from "../plugins/DropboxPlugin";
 import OrdersPlugin from "../plugins/Orders";
 import PassportLoginPlugin from "../plugins/PassportLoginPlugin";
 import PrimaryKeyMutationsOnlyPlugin from "../plugins/PrimaryKeyMutationsOnlyPlugin";
@@ -185,8 +185,8 @@ export function getPostGraphileOptions({
       // Adds custom orders to our GraphQL schema
       OrdersPlugin,
 
-      // Doing some dropbox testing
-      DropboxTestPlugin,
+      // Adds mutations for integration with Dropbox
+      DropboxPlugin,
     ],
 
     /*

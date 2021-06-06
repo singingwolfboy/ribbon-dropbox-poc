@@ -1,11 +1,11 @@
 import { Dropbox } from "dropbox";
 import { Task } from "graphile-worker";
 
-interface ClientAddToDropboxPayload {
-  /**
-   * client id
-   */
+interface OfferRemoveFromDropboxPayload {
   id: string;
+  user_id: string;
+  slug: string;
+  client_slug: string;
 }
 
 interface TokenDetails {
@@ -14,22 +14,17 @@ interface TokenDetails {
 }
 
 const task: Task = async (inPayload, { withPgClient }) => {
-  const payload: ClientAddToDropboxPayload = inPayload as any;
-  const { id: clientId } = payload;
-  const {
-    rows: [client],
-  } = await withPgClient((pgClient) =>
-    pgClient.query(
-      `
-        select *
-        from app_public.clients
-        where id = $1
-      `,
-      [clientId]
-    )
-  );
-  if (!client) {
-    console.error("Client not found; aborting");
+  const payload: OfferRemoveFromDropboxPayload = inPayload as any;
+  if (!payload.user_id) {
+    console.error("Missing user_id; aborting");
+    return;
+  }
+  if (!payload.slug) {
+    console.error("Missing slug; aborting");
+    return;
+  }
+  if (!payload.client_slug) {
+    console.error("Missing client_slug; aborting");
     return;
   }
 
@@ -45,7 +40,7 @@ const task: Task = async (inPayload, { withPgClient }) => {
       ON uas.user_authentication_id = ua.id
       WHERE ua.user_id = $1
       `,
-      [client.user_id]
+      [payload.user_id]
     )
   );
   if (!uas) {
@@ -59,16 +54,12 @@ const task: Task = async (inPayload, { withPgClient }) => {
     clientSecret: process.env.DROPBOX_SECRET,
   });
 
-  // make Dropbox folder for client
-  const path = `/${client.slug}`;
-  await dbx
-    .filesCreateFolderV2({
-      path,
-    })
-    .catch((err) => {
-      console.error(JSON.stringify(err.error));
-      console.error(`path: ${path}`);
-    });
+  // delete Dropbox folder for offer
+  const path = `/${payload.client_slug}/${payload.slug}`;
+  await dbx.filesDeleteV2({ path }).catch((err) => {
+    console.error(JSON.stringify(err.error));
+    console.error(`path: ${path}`);
+  });
 };
 
 module.exports = task;

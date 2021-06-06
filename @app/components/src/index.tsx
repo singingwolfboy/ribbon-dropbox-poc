@@ -1,6 +1,7 @@
 export * from "./ButtonLink";
 export * from "./clientHooks";
 export * from "./ClientList";
+export * from "./ClientPreapproval";
 export * from "./ErrorAlert";
 export * from "./ErrorOccurred";
 export * from "./FourOhFour";
