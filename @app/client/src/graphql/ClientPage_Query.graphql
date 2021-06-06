@@ -1,0 +1,22 @@
+fragment ClientPage_Client on Client {
+  id
+  name
+  slug
+  offers {
+    totalCount
+    nodes {
+      id
+      address
+      amount
+      slug
+    }
+  }
+}
+
+fragment ClientPage_Query on Query {
+  ...SharedLayout_Query
+  clientBySlug(slug: $slug) {
+    id
+    ...ClientPage_Client
+  }
+}

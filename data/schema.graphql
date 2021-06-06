@@ -84,6 +84,9 @@ type Client {
     """The method to use when ordering `Offer`."""
     orderBy: [OffersOrderBy!] = [PRIMARY_KEY_ASC]
   ): OffersConnection!
+
+  """A unique value for the URL."""
+  slug: String!
   updatedAt: Datetime!
 
   """Reads a single `User` that is related to this `Client`."""
@@ -98,6 +101,9 @@ input ClientCondition {
   """Checks for equality with the object’s `id` field."""
   id: Int
 
+  """Checks for equality with the object’s `slug` field."""
+  slug: String
+
   """Checks for equality with the object’s `userId` field."""
   userId: UUID
 }
@@ -105,6 +111,9 @@ input ClientCondition {
 """An input for mutations affecting `Client`"""
 input ClientInput {
   name: String!
+
+  """A unique value for the URL."""
+  slug: String!
 }
 
 """
@@ -113,6 +122,9 @@ Represents an update to a `Client`. Fields that are set will be updated.
 input ClientPatch {
   hasPreapproval: Boolean
   name: String
+
+  """A unique value for the URL."""
+  slug: String
 }
 
 """A connection to a list of `Client` values."""
@@ -148,6 +160,8 @@ enum ClientsOrderBy {
   NATURAL
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
+  SLUG_ASC
+  SLUG_DESC
   USER_ID_ASC
   USER_ID_DESC
 }
@@ -894,6 +908,9 @@ type Offer {
   clientId: Int!
   createdAt: Datetime!
   id: Int!
+
+  """A unique value for the URL."""
+  slug: String!
   updatedAt: Datetime!
 }
 
@@ -906,6 +923,9 @@ input OfferCondition {
 
   """Checks for equality with the object’s `id` field."""
   id: Int
+
+  """Checks for equality with the object’s `slug` field."""
+  slug: String
 }
 
 """An input for mutations affecting `Offer`"""
@@ -920,6 +940,9 @@ input OfferInput {
   """
   amount: Float!
   clientId: Int!
+
+  """A unique value for the URL."""
+  slug: String!
 }
 
 """
@@ -967,6 +990,8 @@ enum OffersOrderBy {
   NATURAL
   PRIMARY_KEY_ASC
   PRIMARY_KEY_DESC
+  SLUG_ASC
+  SLUG_DESC
 }
 
 type Organization {
@@ -1161,6 +1186,7 @@ type PageInfo {
 """The root query type which gives access points into the data universe."""
 type Query {
   client(id: Int!): Client
+  clientBySlug(slug: String!): Client
 
   """Reads and enables pagination through a set of `Client`."""
   clients(
@@ -1194,6 +1220,7 @@ type Query {
   """The currently logged in user (or null if not logged in)."""
   currentUser: User
   offer(id: Int!): Offer
+  offerBySlug(slug: String!): Offer
 
   """Reads and enables pagination through a set of `Offer`."""
   offers(

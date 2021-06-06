@@ -4,6 +4,7 @@ import {
   useDeleteClientMutation,
 } from "@app/graphql";
 import { Button } from "antd";
+import Link from "next/link";
 import React from "react";
 
 interface Props {
@@ -20,7 +21,7 @@ export function ClientList(props: Props) {
     <ul>
       {clients.nodes.map((client) => (
         <li key={client.id}>
-          {client.name}{" "}
+          <Link href={`/c/${client.slug}`}>{client.name}</Link>{" "}
           <Button
             danger
             size="small"

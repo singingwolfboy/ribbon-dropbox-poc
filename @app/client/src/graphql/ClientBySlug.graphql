@@ -1,0 +1,7 @@
+query ClientBySlug($slug: String!) {
+  clientBySlug(slug: $slug) {
+    id
+    name
+    slug
+  }
+}

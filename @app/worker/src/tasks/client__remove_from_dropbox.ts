@@ -5,6 +5,7 @@ interface ClientRemoveFromDropboxPayload {
   id: string;
   user_id: string;
   name: string;
+  slug: string;
   dropbox_preapproval_file_request_id: string | null;
 }
 

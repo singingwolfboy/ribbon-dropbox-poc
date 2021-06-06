@@ -1,0 +1,3 @@
+query ClientPage($slug: String!) {
+  ...ClientPage_Query
+}

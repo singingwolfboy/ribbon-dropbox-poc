@@ -11,15 +11,21 @@ fragment ClientData_User on User {
     totalCount
     nodes {
       id
-      name
-      offers {
-        totalCount
-        nodes {
-          id
-          address
-          amount
-        }
-      }
+      ...ClientData_Client
+    }
+  }
+}
+
+fragment ClientData_Client on Client {
+  id
+  name
+  slug
+  offers {
+    totalCount
+    nodes {
+      id
+      address
+      amount
     }
   }
 }

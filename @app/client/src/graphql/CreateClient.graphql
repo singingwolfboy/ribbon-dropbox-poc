@@ -1,10 +1,11 @@
 fragment CreatedClient on Client {
   id
   name
+  slug
 }
 
-mutation CreateClient($name: String!) {
-  createClient(input: { client: { name: $name } }) {
+mutation CreateClient($name: String!, $slug: String!) {
+  createClient(input: { client: { name: $name, slug: $slug } }) {
     client {
       id
       ...CreatedClient

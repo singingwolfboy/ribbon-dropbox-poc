@@ -687,6 +687,7 @@ begin
     'id', OLD.id,
     'user_id', OLD.user_id,
     'name', OLD.name,
+    'slug', OLD.slug,
     'dropbox_preapproval_file_request_id', OLD.dropbox_preapproval_file_request_id
   ));
   return OLD;
@@ -1902,6 +1903,7 @@ CREATE TABLE app_public.clients (
     id integer NOT NULL,
     user_id uuid DEFAULT app_public.current_user_id() NOT NULL,
     name text NOT NULL,
+    slug public.citext NOT NULL,
     dropbox_preapproval_file_request_id text,
     has_preapproval boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -1914,6 +1916,13 @@ CREATE TABLE app_public.clients (
 --
 
 COMMENT ON TABLE app_public.clients IS 'A client working with this agent.';
+
+
+--
+-- Name: COLUMN clients.slug; Type: COMMENT; Schema: app_public; Owner: -
+--
+
+COMMENT ON COLUMN app_public.clients.slug IS 'A unique value for the URL.';
 
 
 --
@@ -1951,6 +1960,7 @@ CREATE TABLE app_public.offers (
     id integer NOT NULL,
     client_id integer NOT NULL,
     address text NOT NULL,
+    slug public.citext NOT NULL,
     amount money NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -1970,6 +1980,13 @@ COMMENT ON TABLE app_public.offers IS 'An offer on a property, on behalf of a cl
 --
 
 COMMENT ON COLUMN app_public.offers.address IS 'The address of the property. Since this is a proof of concept, this may not be a valid address.';
+
+
+--
+-- Name: COLUMN offers.slug; Type: COMMENT; Schema: app_public; Owner: -
+--
+
+COMMENT ON COLUMN app_public.offers.slug IS 'A unique value for the URL.';
 
 
 --
@@ -2142,11 +2159,27 @@ ALTER TABLE ONLY app_public.clients
 
 
 --
+-- Name: clients clients_slug_key; Type: CONSTRAINT; Schema: app_public; Owner: -
+--
+
+ALTER TABLE ONLY app_public.clients
+    ADD CONSTRAINT clients_slug_key UNIQUE (slug);
+
+
+--
 -- Name: offers offers_pkey; Type: CONSTRAINT; Schema: app_public; Owner: -
 --
 
 ALTER TABLE ONLY app_public.offers
     ADD CONSTRAINT offers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: offers offers_slug_key; Type: CONSTRAINT; Schema: app_public; Owner: -
+--
+
+ALTER TABLE ONLY app_public.offers
+    ADD CONSTRAINT offers_slug_key UNIQUE (slug);
 
 
 --
@@ -3192,6 +3225,13 @@ GRANT INSERT(name),UPDATE(name) ON TABLE app_public.clients TO graphile_starter_
 
 
 --
+-- Name: COLUMN clients.slug; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT INSERT(slug),UPDATE(slug) ON TABLE app_public.clients TO graphile_starter_visitor;
+
+
+--
 -- Name: COLUMN clients.dropbox_preapproval_file_request_id; Type: ACL; Schema: app_public; Owner: -
 --
 
@@ -3231,6 +3271,13 @@ GRANT INSERT(client_id) ON TABLE app_public.offers TO graphile_starter_visitor;
 --
 
 GRANT INSERT(address) ON TABLE app_public.offers TO graphile_starter_visitor;
+
+
+--
+-- Name: COLUMN offers.slug; Type: ACL; Schema: app_public; Owner: -
+--
+
+GRANT INSERT(slug) ON TABLE app_public.offers TO graphile_starter_visitor;
 
 
 --

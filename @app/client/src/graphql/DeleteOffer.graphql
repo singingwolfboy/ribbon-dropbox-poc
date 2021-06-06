@@ -1,0 +1,5 @@
+mutation DeleteOffer($id: Int!) {
+  deleteOffer(input: { id: $id }) {
+    deletedOfferNodeId
+  }
+}

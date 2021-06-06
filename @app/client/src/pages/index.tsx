@@ -4,6 +4,7 @@ import { useForm } from "antd/lib/form/Form";
 import { Store } from "rc-field-form/lib/interface";
 import * as React from "react";
 import { useCallback } from "react";
+import slugify from "slugify";
 const { Title, Paragraph } = Typography;
 import { ClientList, SharedLayout } from "@app/components";
 import {
@@ -24,6 +25,7 @@ const Home: NextPage = () => {
       await createClient({
         variables: {
           name: values.name,
+          slug: slugify(values.name, { lower: true }),
         },
         refetchQueries: [{ query: SharedDocument }],
       });

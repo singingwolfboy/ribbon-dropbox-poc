@@ -1,0 +1,29 @@
+fragment CreatedOffer on Offer {
+  id
+  address
+  amount
+  slug
+}
+
+mutation CreateOffer(
+  $address: String!
+  $amount: Float!
+  $clientId: Int!
+  $slug: String!
+) {
+  createOffer(
+    input: {
+      offer: {
+        address: $address
+        amount: $amount
+        clientId: $clientId
+        slug: $slug
+      }
+    }
+  ) {
+    offer {
+      id
+      ...CreatedOffer
+    }
+  }
+}
