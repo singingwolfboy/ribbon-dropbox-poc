@@ -1,6 +1,7 @@
 import { Dropbox } from "dropbox";
 import { Error as DropboxError, files } from "dropbox/types";
 import { Task } from "graphile-worker";
+import PDFDocument from "pdfkit";
 import { PoolClient } from "pg";
 
 interface OfferAddToDropboxPayload {
@@ -20,6 +21,7 @@ interface Offer {
   user_id: number;
   slug: string;
   client_slug: string;
+  address: string;
 }
 
 const getOfferById = async (
@@ -34,7 +36,8 @@ const getOfferById = async (
         o.id as id,
         c.user_id as user_id,
         o.slug as slug,
-        c.slug as client_slug
+        c.slug as client_slug,
+        o.address as address
       from app_public.offers as o
       join app_public.clients as c
       on o.client_id = c.id
@@ -93,6 +96,15 @@ const task: Task = async (inPayload, { withPgClient }) => {
       console.error(JSON.stringify(err.error));
       console.error(`path: ${path}`);
     });
+
+  // make a dummy PDF file for the folder
+  const doc = new PDFDocument();
+  doc.text(`Sample document for ${offer.address}`);
+  doc.end();
+  await dbx.filesUpload({
+    path: `${path}/sample.pdf`,
+    contents: doc.read(),
+  });
 };
 
 module.exports = task;
