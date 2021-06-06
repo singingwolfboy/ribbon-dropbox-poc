@@ -1,4 +1,5 @@
 import { Dropbox } from "dropbox";
+import { Error, files } from "dropbox/types";
 import { Task } from "graphile-worker";
 import { PoolClient } from "pg";
 
@@ -88,7 +89,7 @@ const task: Task = async (inPayload, { withPgClient }) => {
     .filesCreateFolderV2({
       path,
     })
-    .catch((err) => {
+    .catch((err: Error<files.CreateFolderError>) => {
       console.error(JSON.stringify(err.error));
       console.error(`path: ${path}`);
     });
