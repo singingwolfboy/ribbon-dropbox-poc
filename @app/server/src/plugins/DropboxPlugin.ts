@@ -1,5 +1,5 @@
 import { Dropbox } from "dropbox";
-import { Error, file_requests } from "dropbox/types";
+import { Error as DropboxError, file_requests } from "dropbox/types";
 import { gql, makeExtendSchemaPlugin } from "graphile-utils";
 import { PoolClient } from "pg";
 
@@ -128,7 +128,7 @@ const DropboxPlugin = makeExtendSchemaPlugin(() => ({
             description: `Please submit a pre-approval document for ${client.name}`,
             destination: `/${client.slug}/Preapproval`,
           })
-          .catch((err: Error<file_requests.CreateFileRequestError>) => {
+          .catch((err: DropboxError<file_requests.CreateFileRequestError>) => {
             console.error(err);
           });
 
