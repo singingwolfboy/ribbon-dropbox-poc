@@ -22,6 +22,8 @@ interface Offer {
   slug: string;
   client_slug: string;
   address: string;
+  client_name: string;
+  amount: number;
 }
 
 const getOfferById = async (
@@ -37,7 +39,9 @@ const getOfferById = async (
         c.user_id as user_id,
         o.slug as slug,
         c.slug as client_slug,
-        o.address as address
+        o.address as address,
+        c.name as client_name,
+        o.amount as amount
       from app_public.offers as o
       join app_public.clients as c
       on o.client_id = c.id
@@ -46,6 +50,13 @@ const getOfferById = async (
     [offerId]
   );
   return row;
+};
+
+const currencyFormatter = (value: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
 };
 
 const task: Task = async (inPayload, { withPgClient }) => {
@@ -99,7 +110,11 @@ const task: Task = async (inPayload, { withPgClient }) => {
 
   // make a dummy PDF file for the folder
   const doc = new PDFDocument();
-  doc.text(`Sample document for ${offer.address}`);
+  doc.text(
+    `Sample document for ${offer.address}: ${
+      offer.client_name
+    } offers ${currencyFormatter(offer.amount)}`
+  );
   doc.end();
   await dbx.filesUpload({
     path: `${path}/sample.pdf`,
