@@ -23,7 +23,7 @@ interface Offer {
   client_slug: string;
   address: string;
   client_name: string;
-  amount: number;
+  amount: string;
 }
 
 const getOfferById = async (
@@ -50,13 +50,6 @@ const getOfferById = async (
     [offerId]
   );
   return row;
-};
-
-const currencyFormatter = (value: number) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
 };
 
 const task: Task = async (inPayload, { withPgClient }) => {
@@ -111,9 +104,7 @@ const task: Task = async (inPayload, { withPgClient }) => {
   // make a dummy PDF file for the folder
   const doc = new PDFDocument();
   doc.text(
-    `Sample document for ${offer.address}: ${
-      offer.client_name
-    } offers ${currencyFormatter(offer.amount)}`
+    `Sample document for ${offer.address}: ${offer.client_name} offers ${offer.amount}`
   );
   doc.end();
   await dbx.filesUpload({
